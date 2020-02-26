@@ -1,0 +1,67 @@
+---
+title: "class-5"
+author: "Alexandra Norris"
+date: "2/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rstanarm)
+library(skimr)
+library(ggplot2)
+
+```
+
+```{r, cache=TRUE}
+load("nes.rda")
+
+# real_ideo is NA until 1972
+# race, 1 white, 2 black, 3 
+# 1 is more liberal, 7 is mo
+
+x <- nes %>%
+  as_tibble() %>%
+  select(year, partyid7, real_ideo, race_adj, age_discrete, educ1, female, income) %>%
+  drop_na() %>%
+  mutate(gender = as.factor(ifelse(female == 1, "female", "non-female"))) %>%
+  mutate(race = as.factor(ifelse(race_adj == 1, "white", ifelse(race_adj == 1.5, "other", "black"))))
+  
+fit_1 <- stan_glm(partyid7 ~ gender, data = x, refresh = 0)
+
+```
+```{r}
+
+# pred is the predicted party id value
+
+x %>%
+  select(partyid7, gender) %>%
+  mutate(pred = predict(fit_1, x))
+```
+```{r}
+
+fit_2 <- stan_glm(partyid7 ~ race, data = x, refresh = 0)
+print(fit_2)
+
+x %>%
+  select(partyid7, gender, race) %>%
+  mutate(pred_1 = predict(fit_1, x)) %>%
+  mutate(pred_2 = predict(fit_2, x)) 
+
+```
+
+```{r}
+
+fit_3 <- stan_glm(partyid7 ~ real_ideo, data = x)
+print(fit_3)
+
+x %>%
+  select(partyid7, gender, race) %>%
+  mutate(pred_1 = predict(fit_1, x)) %>%
+  mutate(pred_2 = predict(fit_2, x)) %>%
+  mutate(pred_3 = predict(fit_3, x))
+  
+```
+
